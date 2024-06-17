@@ -1,17 +1,21 @@
 library(RTMB)
 dat_l = readRDS("randomEffects/exercise/haddockTiny.rds")
 locUTM = cbind(dat_l$UTMX,dat_l$UTMY)
+predPoints = readRDS("randomEffects/exercise/predPoints.rds")
 
 mesh <- fmesher::fm_mesh_2d(locUTM,
-  max.edge = c(20 , 50)
+  max.edge = c(40 , 60),
+  offset = -0.20
 )
 plot(mesh)
+
 
 spde <- fmesher::fm_fem(mesh)
 spdeMatrices = list(c0 = spde$c0, g1 = spde$g1,g2 = spde$g2)
 A <- fmesher::fm_basis(
   mesh,
   loc = locUTM)
+
 
 dat <- list(catch = dat_l$catch,
              distance = dat_l$distance,
@@ -29,17 +33,17 @@ f <- function(par) {
   kappa <- exp(logKappa)
   tau <- exp(logTau)
 
+  catch = OBS(catch)
   #Precision matrix Q, e.g. Lindgren + Rue 2015 JSS p4:
   Q <- tau^2*(kappa^4 * spdeMatrices$c0 + 2 * kappa^2 * spdeMatrices$g1 + spdeMatrices$g2)
   nll = ...
+
   #Linear inerpolation
   delta = as.vector(A%*%gamma)
   
   nll = nll - ...
   return(nll)
 }
-
-
 
 #Plot spatial effect, read map
 interp_surface <- akima::interp(mesh$loc[,1], mesh$loc[,2], pl$gamma,nx = 200,ny = 200)
